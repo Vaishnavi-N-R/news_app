@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newsapp/services/remote_services.dart';
 
@@ -24,12 +25,26 @@ class NewsController extends GetxController {
   void fetchTopHeadlines(RxString category) async {
     try {
       isLoading(true);
+
+      // Fetch the articles from your API
       var articles = await RemoteServices.fetchTopHeadlines(category.string);
 
       if (articles != null) {
+        // Ensure that each article has all the necessary properties
+        articles = articles.where((article) {
+          // Check for null values and provide default values where necessary
+          return article.title != null &&
+              article.url != null &&
+              article.description != null &&
+              article.urlToImage != null;
+        }).toList();
+
+        // Assign the filtered articles to the list
         newsList.assignAll(articles);
       }
-    } catch (e) {} finally {
+    } catch (e) {
+      print('Error fetching top headlines: $e');
+    } finally {
       isLoading(false);
     }
   }
@@ -41,7 +56,8 @@ class NewsController extends GetxController {
       if (sources != null) {
         sourceList.assignAll(sources);
       }
-    } catch (e) {} finally {
+    } catch (e) {
+    } finally {
       isSourcesLoading(false);
     }
   }
@@ -53,7 +69,8 @@ class NewsController extends GetxController {
       if (results != null) {
         articleListForQuery.assignAll(results);
       }
-    } catch (e) {} finally {
+    } catch (e) {
+    } finally {
       isResultsForQueryLoading(false);
     }
   }

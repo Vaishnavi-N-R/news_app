@@ -24,7 +24,8 @@ class _TopHeadlinesState extends State<TopHeadlines> {
         customTabsOptions: CustomTabsOptions(
           colorSchemes: CustomTabsColorSchemes.defaults(
             toolbarColor: theme.colorScheme.surface, // Set toolbar color
-            navigationBarColor: theme.colorScheme.surface, // Set navigation bar color
+            navigationBarColor:
+                theme.colorScheme.surface, // Set navigation bar color
           ),
           urlBarHidingEnabled: true,
           showTitle: true,
@@ -48,26 +49,27 @@ class _TopHeadlinesState extends State<TopHeadlines> {
           width: double.infinity,
           height: 100,
           child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: customCategory.Category.categorylist.length,
-            scrollDirection: Axis.horizontal,
-            itemBuilder: (ctx, index) {
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _newsController.category.value =
-                        customCategory.Category.categorylist[index]["name"]!;
-                    _newsController.fetchTopHeadlines(_newsController.category);
-                  });
-                },
-                child: CategoryTile(
-                  image: customCategory.Category.categorylist[index]["image"],
-                  categoryName: customCategory.Category.categorylist[index]
-                      ["name"],
-                ),
-              );
-            },
-          ),
+              shrinkWrap: true,
+              itemCount: customCategory.Category.categorylist.length,
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (ctx, index) {
+                var articles = _newsController.newsList;
+                print('Article ${index}: ${articles[index].title}');
+
+                // Check if the urlToImage is null and provide a default image if necessary
+                final imageUrl = articles[index].urlToImage ??
+                    'https://via.placeholder.com/150';
+
+                return InkWell(
+                  onTap: () => _launchURL(context, articles[index].url),
+                  child: ArticleCard(
+                    imageUrl: imageUrl, // Pass the safe imageUrl
+                    title: articles[index].title,
+                    source: articles[index].source.name,
+                    publishedAt: articles[index].publishedAt,
+                  ),
+                );
+              }),
         ),
         // News articles
         Expanded(
@@ -75,15 +77,22 @@ class _TopHeadlinesState extends State<TopHeadlines> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
               child: Obx(() {
-                if (_newsController.isLoading.value)
+                print('Loading state: ${_newsController.isLoading.value}');
+                if (_newsController.isLoading.value) {
                   return const Center(
                     child: CircularProgressIndicator(),
                   );
-                else
+                } else {
+                  print(
+                      'Number of articles: ${_newsController.newsList.length}');
+                  if (_newsController.newsList.isEmpty) {
+                    return const Center(child: Text('No articles found.'));
+                  }
                   return ListView.builder(
                     itemCount: _newsController.newsList.length,
                     itemBuilder: (ctx, index) {
                       var articles = _newsController.newsList;
+                      print('Article ${index}: ${articles[index].title}');
                       return InkWell(
                         onTap: () => _launchURL(context, articles[index].url),
                         child: ArticleCard(
@@ -95,6 +104,7 @@ class _TopHeadlinesState extends State<TopHeadlines> {
                       );
                     },
                   );
+                }
               }),
             ),
           ),

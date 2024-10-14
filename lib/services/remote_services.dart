@@ -16,6 +16,7 @@ class RemoteServices {
 
     if (response.statusCode == 200) {
       var jsonString = response.body;
+      print("Response:$jsonString");
       var articles = NewsResponse.fromJson(json.decode(jsonString)).articles;
       return articles;
     } else {
