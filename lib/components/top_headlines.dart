@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_custom_tabs/flutter_custom_tabs.dart'; // Make sure you have this package
+import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:newsapp/constants/category.dart';
 import 'package:newsapp/controllers/news_controller.dart';
-import 'package:newsapp/constants/category.dart' as customCategory;
 import 'package:newsapp/widgets/article_card.dart';
+import 'package:newsapp/constants/category.dart' as customCategory;
 import 'package:newsapp/widgets/category_tile.dart';
 
 class TopHeadlines extends StatefulWidget {
@@ -15,27 +16,24 @@ class TopHeadlines extends StatefulWidget {
 class _TopHeadlinesState extends State<TopHeadlines> {
   final NewsController _newsController = Get.find();
 
-  // Updated _launchURL method
   void _launchURL(BuildContext context, String url) async {
-    final theme = Theme.of(context); // Fetch the current theme
+    final theme = Theme.of(context);
     try {
       await launchUrl(
-        Uri.parse(url), // Use Uri.parse to parse the URL
+        Uri.parse(url),
         customTabsOptions: CustomTabsOptions(
           colorSchemes: CustomTabsColorSchemes.defaults(
-            toolbarColor: theme.colorScheme.surface, // Set toolbar color
-            navigationBarColor:
-                theme.colorScheme.surface, // Set navigation bar color
+            toolbarColor: theme.colorScheme.surface,
+            navigationBarColor: theme.colorScheme.surface,
           ),
           urlBarHidingEnabled: true,
           showTitle: true,
           browser: const CustomTabsBrowserConfiguration(
-            prefersDefaultBrowser: true, // Prefer the default browser
+            prefersDefaultBrowser: true,
           ),
         ),
       );
     } catch (e) {
-      // Handle the exception in case the browser app is not available
       debugPrint('Error launching custom tab: $e');
     }
   }
@@ -48,65 +46,65 @@ class _TopHeadlinesState extends State<TopHeadlines> {
         Container(
           width: double.infinity,
           height: 100,
-          child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: customCategory.Category.categorylist.length,
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (ctx, index) {
-                var articles = _newsController.newsList;
-                print('Article ${index}: ${articles[index].title}');
-
-                // Check if the urlToImage is null and provide a default image if necessary
-                final imageUrl = articles[index].urlToImage ??
-                    'https://via.placeholder.com/150';
-
-                return InkWell(
-                  onTap: () => _launchURL(context, articles[index].url),
-                  child: ArticleCard(
-                    imageUrl: imageUrl, // Pass the safe imageUrl
-                    title: articles[index].title,
-                    source: articles[index].source.name,
-                    publishedAt: articles[index].publishedAt,
-                  ),
-                );
-              }),
+          child: Obx(() {
+            var articles = _newsController.newsList;
+            if (articles.isEmpty) {
+              return const Center(
+                child: Text('No categories available.'),
+              );
+            }
+            return ListView.builder(
+                shrinkWrap: true,
+                itemCount: Category.categorylist.length,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (ctx, index) {
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _newsController.category.value =
+                            Category.categorylist[index]["name"]!;
+                        _newsController
+                            .fetchTopHeadlines(_newsController.category);
+                      });
+                    },
+                    child: CategoryTile(
+                        image: Category.categorylist[index]["image"],
+                        categoryName: Category.categorylist[index]["name"]),
+                  );
+                });
+          }),
         ),
         // News articles
         Expanded(
-          child: Container(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
-              child: Obx(() {
-                print('Loading state: ${_newsController.isLoading.value}');
-                if (_newsController.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else {
-                  print(
-                      'Number of articles: ${_newsController.newsList.length}');
-                  if (_newsController.newsList.isEmpty) {
-                    return const Center(child: Text('No articles found.'));
-                  }
-                  return ListView.builder(
-                    itemCount: _newsController.newsList.length,
-                    itemBuilder: (ctx, index) {
-                      var articles = _newsController.newsList;
-                      print('Article ${index}: ${articles[index].title}');
-                      return InkWell(
-                        onTap: () => _launchURL(context, articles[index].url),
-                        child: ArticleCard(
-                          imageUrl: articles[index].urlToImage,
-                          title: articles[index].title,
-                          source: articles[index].source.name,
-                          publishedAt: articles[index].publishedAt,
-                        ),
-                      );
-                    },
-                  );
-                }
-              }),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+            child: Obx(() {
+              if (_newsController.isLoading.value) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (_newsController.newsList.isEmpty) {
+                return const Center(
+                  child: Text('No articles found.'),
+                );
+              } else {
+                return ListView.builder(
+                  itemCount: _newsController.newsList.length,
+                  itemBuilder: (ctx, index) {
+                    var articles = _newsController.newsList;
+                    return InkWell(
+                      onTap: () => _launchURL(context, articles[index].url),
+                      child: ArticleCard(
+                        imageUrl: articles[index].urlToImage,
+                        title: articles[index].title,
+                        source: articles[index].source.name,
+                        publishedAt: articles[index].publishedAt,
+                      ),
+                    );
+                  },
+                );
+              }
+            }),
           ),
         ),
       ],
